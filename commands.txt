@@ -1,0 +1,114 @@
+Summary of the commands used during the workshop:
+
+Creating a new GraphQL server project
+
+  1- Create a new project for our GraphQL server:
+  dotnet new sln --name ConferencePlanner
+  dotnet new web --name GraphQL
+  dotnet sln add GraphQL
+
+  2- Update the launchSettings.json file in the Properties directory as follows:
+  Remove the iisSettings and the IIS Express profile.
+  Change launchBrowser to false in the http and https profiles.
+  Change the HTTP port to 5000 and the HTTPS port to 7000, in the applicationUrl properties.
+
+  3- Add the following to the <PropertyGroup> in GraphQL.csproj:
+  <RootNamespace>ConferencePlanner.GraphQL</RootNamespace>
+
+  4- Entity Framework relational database packages
+  To enable the interaction with relational databases
+  dotnet add GraphQL package Microsoft.EntityFrameworkCore.Relational --version 8.0.8
+
+  To interact with postgresql database
+  dotnet add GraphQL package Npgsql.EntityFrameworkCore.PostgreSQL --version 8.0.4
+
+
+Configuring EF Migrations
+
+  1- Adding the nuget package responsible for generating code that interacts with the database (generating migrations and more)
+  dotnet add GraphQL package Microsoft.EntityFrameworkCore.Design --version 8.0.8
+
+  2- Installing the EF Core tool
+  dotnet new tool-manifest
+  dotnet tool install dotnet-ef --local --version 8.0.8
+
+  3-  Building the app and generating the migrations
+  dotnet build
+  dotnet ef migrations add Initial --project GraphQL
+  dotnet ef database update --project GraphQL
+
+
+Adding GraphQL
+  
+  1- Adding the necessary HotChocolate nuget packages
+  dotnet add GraphQL package HotChocolate.AspNetCore --version 14.0.0-p.165
+  dotnet add GraphQL package HotChocolate.AspNetCore.CommandLine --version 14.0.0-p.165
+  dotnet add GraphQL package HotChocolate.Types.Analyzers --version 14.0.0-p.165
+
+  2- To run the GraphQL server
+  dotnet run --project GraphQL
+
+
+Adding more data models and running migrations
+  
+  dotnet build GraphQL
+  dotnet ef migrations add Refactoring --project GraphQL
+  dotnet ef database update --project GraphQL
+
+
+Adding pages to our lists
+  
+  1- Adding the HotChocolate package to perform pagination
+  dotnet add GraphQL package HotChocolate.Data.EntityFramework --version 14.0.0-p.165
+
+  2- Adding the HotChocolate package to add the paging arguments 
+  dotnet add GraphQL package HotChocolate.Pagination.EntityFramework --version 14.0.0-p.165
+
+
+Adding filter capabilities
+  
+  1- Adding the HotChocolate package responsible for filtering
+  dotnet add GraphQL package HotChocolate.Data --version 14.0.0-p.165
+  
+
+Adding GraphQL subscriptions
+  
+  1- Providing a Redis-based pub/sub messaging mechanism for handling GraphQL subscriptions across distributed systems.
+  dotnet add GraphQL package HotChocolate.Subscriptions.Redis --version 14.0.0-p.165
+
+
+Testing the GraphQL server
+
+  1- Create an xUnit test projec
+  dotnet new xunit --name GraphQL.Tests
+
+  2- Add the project to our solution
+  dotnet sln add GraphQL.Tests
+
+  3- Update the GraphQL.Tests.csproj file to the following
+  """
+    <PackageReference Include="coverlet.collector" Version="6.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  """
+
+  4- Add a reference to the NuGet package CookieCrumble
+  dotnet add GraphQL.Tests package CookieCrumble --version 14.0.0-p.174
+
+  5- Add a reference to the GraphQL server:
+  dotnet add GraphQL.Tests reference GraphQL
+
+  6- Example of working with the TestContainers package
+  dotnet add GraphQL.Tests package Testcontainers.PostgreSql --version 3.10.0
+  dotnet add GraphQL.Tests package Testcontainers.Redis --version 3.10.0
+
+
+
+

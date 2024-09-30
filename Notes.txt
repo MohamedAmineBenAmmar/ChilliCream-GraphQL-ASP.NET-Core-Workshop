@@ -1,0 +1,78 @@
+Relay mutations pattern
+    For mutations we are using the Relay mutation pattern.
+    Relay uses a common pattern for mutations, where there are root fields on the mutation type with a single argument, input.
+    By convention, mutations are named as verbs, their inputs are the name with Input appended at the end, and they return an object that is the name with Payload appended.
+
+Dataloader
+    DataLoader is a generic utility to be used as part of your application's data fetching layer to provide a consistent API over various backends and reduce requests 
+    to those backends via batching and caching. 
+
+Type extensions
+    At the moment, we are purely inferring the schema from our C# classes. In some cases where we have everything under control, this might be a good thing, and everything is okay.
+
+    But if we, for instance, have some parts of the API not under our control and want to change the GraphQL schema representation of these APIs, type extensions can help. 
+    With Hot Chocolate, we can mix in these type extensions where we need them.
+
+Relay spec
+    In GraphQL, most APIs are designed in Relay style. Relay is Facebook's GraphQL client for React and represents Facebook's opinionated view on GraphQL. 
+    The GraphQL community adopted the Relay server specification since it provides a battle-tested way of exposing GraphQL at massive scale.
+    The two core assumptions that Relay makes about a GraphQL server are that it provides:
+    A mechanism for refetching an object.
+    A description of how to page through connections.
+
+Offering plural versions of fields and being precise about field names
+    With GraphQL, we want to think about efficiency a lot. For instance, we offer mutations with one input argument so that clients can assign this argument from one variable without needing to deconstruct. Almost every little aspect in GraphQL is done so that you can request data more efficiently. 
+    That is why we should also design our schema in such a way that we allow users of our API to fetch multiple entities in one go.
+    But with plural versions, we can specify a variable of IDs and pass that into a query without modifying the query text itself. By doing that, we can use static queries on our client and also let the query engine of the GraphQL server optimize this static query for execution. Further, we can write a resolver that is optimized to fetch data in one go. 
+    Offering plural fields allows for more flexibility and better performance.
+
+Understanding middleware + middleware order
+    The field middleware is one of the foundational components in Hot Chocolate. Many features that you use, for instance, the ID transformation from internal IDs to global object identifiers, are field middleware. Even resolvers are compiled into field middleware.
+    All the middleware that are applied to a field are compiled into one delegate that can be executed. Each middleware knows about the next middleware component in its chain and with this can choose to execute logic before it or after it or before and after it. 
+    Also, a middleware might skip the next middleware in line by not calling next.
+
+    A field middleware can be defined by binding it to a field with the descriptor API:
+    context.Use(next => async context =>
+    {
+        // run some code
+
+        // invoke next middleware component in the chain
+        await next(context);
+
+        // run some more code
+    })
+    A resolver pipeline is built by applying middleware in order, meaning that the first declared middleware on the field descriptor is the first one executed in the pipeline. The last middleware in the field resolver pipeline is always the field resolver itself.
+
+    The field resolver middleware will only execute if no result has been produced so far. So, if any middleware has set the Result property on the context, the field resolver will be skipped.
+
+    => That also means that the order of middleware attributes is important, since they form the request pipeline.
+
+Adding paging to your lists
+    Let's start by implementing the 2nd Relay server specification by adding Relay-compliant paging to our lists. In general, you should avoid plain lists wherever lists grow or are very large. 
+    Relay describes cursor-based paging where you can navigate between edges through their cursors. Cursor-based paging is ideal whenever you implement infinite scrolling solutions. In contrast to offset pagination, 
+    you cannot jump to a specific page, but you can jump to a particular cursor and navigate from there.
+
+    IQueryable : The new resolver will return an IQueryable instead of executing the database query. The IQueryable is like a query builder. By applying the UsePaging middleware, we are rewriting the database query to only fetch the items that we need for our dataset.
+    Note: In order to use keyset pagination, we must always include a unique column in the ORDER BY clause (in this case, we also order by the primary key Id). (check the code in the TrackQueries)
+
+Adding filter capabilities to the top-level field sessions
+    Exposing rich filters to a public API can lead to unpredictable performance implications, but using filters wisely on select fields can make your API much better to use. 
+    In our conference API it would make almost no sense to expose filters on top of the tracks field since the Track type really only has one field name, 
+    and filtering on that really seems overkill. The sessions field on the other hand could be improved with filter capabilities. The user of our conference app could search 
+    for a session with a specific title or in a specific time window.
+
+    Filtering, like paging, is a middleware that can be applied on IQueryable. As mentioned in the middleware session, order is important with middleware. 
+    This means that our paging middleware has to execute last.
+
+Adding real-time functionality with subscriptions
+    For the last few parts of our journey through GraphQL, we've dealt with queries and mutations. In many APIs, this is all that people need or want, 
+    but GraphQL also offers us real-time capabilities where we can formulate what data we want to receive when a specific event occurs.
+
+Infinite or Finite Communication
+    The event was raised, and our subscription query was executed. We can also see that the loading indicator is still turning since we are still subscribed, 
+    and we'll get new responses whenever the event is raised. With GraphQL a subscription stream can be infinite or finite. 
+    A finite stream will automatically complete whenever the server chooses to complete the topic (ITopicEventSender.CompleteAsync).
+
+Testing the GraphQL server
+    Adding a schema change test: A schema change test will simply create a snapshot of your schema, and always fails if the schema changes. This kind of test is often useful when working with pure code-first, where a simple change in C# can create a breaking change in your GraphQL schema.
+    Adding a query test: Where we take a snapshot of the query execution and by having subsequent execution of the same test we compare the snapshots

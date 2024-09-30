@@ -1,0 +1,242 @@
+# Mutaion to add a speaker
+# mutation AddSpeaker {
+#    addSpeaker(input: {
+#     bio: "Hamma came to earth in 30/05/1999",
+#     name: "SUPER HAMMA",
+#     website: "HAMMA.com"
+#    }){
+#     speaker {
+#       name
+#     }
+#    }
+# }
+
+# Query to retreive all speakers
+# query GetSpeakers {
+#   speakers {
+#     name
+#     id
+#     bio
+#     website
+#   }
+# }
+
+# Query to get one speaker (here we fetched two to see the console output and the role of the data loader to minimize calls to the database)
+# Quey used to be correct before addong the NodeResolver annotation to add the relay specification
+# query GetSpecificSpeakerById {
+#   a: speaker(id: 4) {
+#     name
+#   }
+#   b: speaker(id: 5) {
+#     name
+#   }
+# }
+
+# Query to fetch a speaker and his sessions
+# query GetSpeakerWithSessions {
+#   a: speaker(id: 1) {
+#     name
+#     sessions {
+#       title
+#     }
+#   }
+#   b: speaker(id: 2) {
+#     name
+#     sessions {
+#       title
+#     }
+#   }
+#    c: speaker(id: 3) {
+#     name
+#     sessions {
+#       title
+#     }
+#   }
+# }
+
+# Query after adding the relay specification support
+# query GetSpecificSpeakerById {
+#   a: speaker(id: "U3BlYWtlcjo0") {
+#     name
+#   }
+#   b: speaker(id: "U3BlYWtlcjo0") {
+#     name
+#   }
+# }
+
+# Example of a query where we sent our plural resolver where we give it multiple ids to work on following the relay sepc
+# query {
+#   speakersById(ids: ["U3BlYWtlcjo0"]){
+#     name
+#   }
+# }
+
+# Mutation example of add a session
+# mutation AddSession {
+#   addSession(input: {
+#     title: "Learn bankai in 3 days",
+#     abstract: "Tensa Zangetsu",
+#     speakerIds: ["U3BlYWtlcjo0"]
+#   }){
+#     session{
+#       id
+#     }
+#   }
+# }
+
+# Mutation example of add a track
+# mutation AddTrack {
+#   addTrack(input: {
+#     name: "Kurama give me chakra"
+#   }){
+#     track {
+#       name
+#     }
+#   }
+# }
+
+# Example of a query to fetch of the first track (testing the pagination feature)
+# query GetTrack {
+#   tracks(first: 3) {
+#     edges {
+#       node {
+#         id
+#         name
+#       }
+#       cursor
+#     }
+#     pageInfo {
+#       startCursor
+#       endCursor
+#       hasNextPage
+#       hasPreviousPage
+#     }
+#   }
+# }
+
+# Example of query where we will be using the after argument to fetch items after a certain pointer
+# query GetTrack {
+#   tracks(first: 2, after: "MA==") {
+#     edges {
+#       node {
+#         id
+#         name
+#       }
+#       cursor
+#     }
+#     pageInfo {
+#       startCursor
+#       endCursor
+#       hasNextPage
+#       hasPreviousPage
+#     }
+#   }
+# }
+
+# Fetch a specific track and get the first session of this track
+# query GetTrackWithSessions {
+#   trackById(id: "VHJhY2s6MQ==") {
+#     id
+#     sessions(first: 1) {
+#       nodes {
+#         title
+#       }
+#     }
+#   }
+# }
+
+# Getting paginated sessions + filtering based on the session name
+# query GetPaginatedSessions {
+#   sessions(first: 1, where: {
+#     title: {
+#       contains: "C#"
+#     }
+#   }){
+#     nodes{
+#       title
+#     }
+#   }
+# }
+
+# Example of a subscription
+# subscription {
+#   onSessionScheduled {
+#     title
+#     startTime
+#   }
+# }
+
+# Example of queries used to get the ids of the sessions and the tracks
+# query GetSessionsAndTracks {
+#   sessions(first: 3) {
+#     nodes {
+#       id
+#     }
+#   }
+#   tracks(first: 3) {
+#     nodes {
+#       id
+#     }
+#   }
+# }
+
+# mutation ScheduleSession {
+#   scheduleSession(
+#     input: {
+#       sessionId: "U2Vzc2lvbjoz"
+#       trackId: "VHJhY2s6MQ=="
+#       startTime: "2020-08-01T16:00:00Z"
+#       endTime: "2020-08-01T17:00:00Z"
+#     }
+#   ) {
+#     session {
+#       title
+#     }
+#   }
+# }
+
+# Testing the dynamic subscription 
+# query GetSessions {
+#   sessions(first: 1) {
+#     nodes {
+#       id
+#     }
+#   }
+# }
+
+# mutation RegisterAttendee {
+#   registerAttendee(
+#     input: {
+#       firstName: "Michael"
+#       lastName: "Staib"
+#       username: "michael"
+#       emailAddress: "michael@chillicream.com"
+#     }
+#   ) {
+#     attendee {
+#       id
+#     }
+#   }
+# }
+
+# mutation CheckInAttendee {
+#   checkInAttendee(
+#     input: {
+#       attendeeId: "QXR0ZW5kZWU6MQ=="
+#       sessionId: "U2Vzc2lvbjoy"
+#     }
+#   ) {
+#     attendee {
+#       username
+#     }
+#   }
+# }
+
+# subscription OnAttendeeCheckedIn {
+#   onAttendeeCheckedIn(sessionId: "U2Vzc2lvbjoy") {
+#     checkInCount
+#     attendee {
+#       username
+#     }
+#   }
+# }
